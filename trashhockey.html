@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trash Hockey Game</title>
+  <style>
+    body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    canvas { background: #333; display: block; border: 2px solid white; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Load goalpost image
+    const goalImg = new Image();
+    goalImg.src = "0ef77760-d76f-449b-b2a1-e403e8525016.png"; // use uploaded dustbin file
+
+    // Ball (trash puck)
+    let ball = { x: 400, y: 200, dx: 6, dy: 5, radius: 12 };
+
+    // Computer paddle
+    let computer = { x: 50, y: 200, width: 10, height: 80, dy: 0 };
+
+    // Student paddle
+    let student = { x: 740, y: 200, width: 10, height: 80, dy: 0 };
+
+    // Goals
+    const goalHeight = 180;
+    const goalY = (canvas.height - goalHeight) / 2;
+
+    // Scores
+    let scoreComputer = 0;
+    let scoreStudent = 0;
+
+    // Draw ball
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "yellow";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    // Draw paddles
+    function drawPaddle(p) {
+      ctx.fillStyle = "cyan";
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+    }
+
+    // Draw goals (dustbins)
+    function drawGoals() {
+      if (goalImg.complete) {
+        // Left dustbin
+        ctx.drawImage(goalImg, 0, goalY, 50, goalHeight);
+        // Right dustbin
+        ctx.drawImage(goalImg, canvas.width - 50, goalY, 50, goalHeight);
+      }
+    }
+
+    // Draw scores
+    function drawScores() {
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "white";
+      ctx.fillText("Computer: " + scoreComputer, 50, 30);
+      ctx.fillText("Student: " + scoreStudent, 650, 30);
+    }
+
+    // Update positions
+    function update() {
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      // Bounce top/bottom
+      if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+        ball.dy *= -1;
+      }
+
+      // Paddle collisions
+      if (ball.x - ball.radius < computer.x + computer.width &&
+          ball.y > computer.y && ball.y < computer.y + computer.height) {
+        ball.dx *= -1;
+      }
+      if (ball.x + ball.radius > student.x &&
+          ball.y > student.y && ball.y < student.y + student.height) {
+        ball.dx *= -1;
+      }
+
+      // Goal detection
+      if (ball.x - ball.radius <= 0) {
+        if (ball.y > goalY && ball.y < goalY + goalHeight) {
+          scoreStudent++;
+        }
+        resetBall();
+      }
+      if (ball.x + ball.radius >= canvas.width) {
+        if (ball.y > goalY && ball.y < goalY + goalHeight) {
+          scoreComputer++;
+        }
+        resetBall();
+      }
+
+      // Computer AI: follow the ball
+      if (ball.y < computer.y + computer.height / 2) {
+        computer.y -= 4;
+      } else if (ball.y > computer.y + computer.height / 2) {
+        computer.y += 4;
+      }
+
+      // Student paddle movement
+      student.y += student.dy;
+
+      // Prevent paddles from going out
+      computer.y = Math.max(0, Math.min(canvas.height - computer.height, computer.y));
+      student.y = Math.max(0, Math.min(canvas.height - student.height, student.y));
+    }
+
+    function resetBall() {
+      ball.x = canvas.width / 2;
+      ball.y = canvas.height / 2;
+      ball.dx = (Math.random() > 0.5 ? 6 : -6);
+      ball.dy = (Math.random() > 0.5 ? 5 : -5);
+    }
+
+    // Draw everything
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBall();
+      drawPaddle(computer);
+      drawPaddle(student);
+      drawGoals();
+      drawScores();
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Controls for student
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp") student.dy = -6;
+      if (e.key === "ArrowDown") student.dy = 6;
+    });
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") student.dy = 0;
+    });
+
+    // Start game when dustbin image is loaded
+    goalImg.onload = () => {
+      gameLoop();
+    };
+  </script>
+</body>
+</html>
